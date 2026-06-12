@@ -101,7 +101,7 @@ export default function Dashboard() {
   const [logs,         setLogs]         = useState<string[]>([])
   const [reports,      setReports]      = useState<string[]>([])
   const [runType,       setRunType]       = useState<'full' | 'backend-only' | 'mobile-only'>('full')
-  const [selCountry,    setSelCountry]    = useState<string>('')
+  const [selCountries,  setSelCountries]  = useState<string[]>(['USA','MEX','BRA','GBR','EU_ROTATE'])
   const [nextEuCountry, setNextEuCountry] = useState<string>('')
   const [triggering,    setTriggering]    = useState(false)
 
@@ -192,7 +192,7 @@ export default function Dashboard() {
     setTriggering(true)
     try {
       const body: Record<string, unknown> = { type: runType }
-      if (selCountry) body.countries = [selCountry]
+      if (selCountries.length > 0) body.countries = selCountries
       const r = await fetch('/api/proxy/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -269,61 +269,69 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Quick-select: default 5 */}
+            {/* All Payment Rails preset */}
             <div>
-              <p className="text-xs text-gray-500 mb-2">Quick select</p>
-              <div className="flex gap-1.5 flex-wrap">
-                {(['USA','MEX','BRA','GBR'] as const).map(code => (
-                  <button
-                    key={code}
-                    onClick={() => setSelCountry(code)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      selCountry === code
-                        ? 'bg-white text-gray-950'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                    }`}
-                  >
-                    {code}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setSelCountry('EU_ROTATE')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selCountry === 'EU_ROTATE'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-800 text-blue-400 hover:bg-gray-700'
-                  }`}
-                  title={nextEuCountry ? `Next EU: ${nextEuCountry}` : 'EU rotating'}
-                >
-                  EU ↻{nextEuCountry ? ` (${nextEuCountry})` : ''}
-                </button>
-              </div>
+              <p className="text-xs text-gray-500 mb-2">Preset</p>
+              <button
+                onClick={() => setSelCountries(['USA','MEX','BRA','GBR','EU_ROTATE'])}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
+                  selCountries.length === 5 &&
+                  ['USA','MEX','BRA','GBR','EU_ROTATE'].every(c => selCountries.includes(c))
+                    ? 'bg-white text-gray-950 border-white'
+                    : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                }`}
+              >
+                All Payment Rails
+                {nextEuCountry && (
+                  <span className="ml-2 text-xs opacity-60">EU:{nextEuCountry}</span>
+                )}
+              </button>
             </div>
 
-            {/* Country dropdown */}
+            {/* Country multi-select */}
             <div>
               <p className="text-xs text-gray-500 mb-2">
-                Or pick any country
+                Countries
+                <span className="ml-1 text-gray-600">({selCountries.length} selected)</span>
               </p>
-              <select
-                value={selCountry}
-                onChange={e => setSelCountry(e.target.value)}
-                className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-1.5
-                           focus:outline-none focus:border-gray-500 min-w-52"
-              >
-                <option value="">All default countries</option>
-                <option value="EU_ROTATE">EU — rotating{nextEuCountry ? ` (next: ${nextEuCountry})` : ''}</option>
+              <div className="h-36 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg p-2 space-y-0.5 min-w-56">
+                {/* EU rotating option at top */}
+                <label className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selCountries.includes('EU_ROTATE')}
+                    onChange={() => setSelCountries(prev =>
+                      prev.includes('EU_ROTATE') ? prev.filter(c => c !== 'EU_ROTATE') : [...prev, 'EU_ROTATE']
+                    )}
+                    className="accent-blue-400"
+                  />
+                  <span className="text-xs text-blue-400 font-medium">
+                    EU ↻{nextEuCountry ? ` (${nextEuCountry})` : ''}
+                  </span>
+                </label>
+                <div className="border-t border-gray-700 my-1" />
                 {COUNTRIES.map(c => (
-                  <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+                  <label key={c.code} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selCountries.includes(c.code)}
+                      onChange={() => setSelCountries(prev =>
+                        prev.includes(c.code) ? prev.filter(x => x !== c.code) : [...prev, c.code]
+                      )}
+                      className="accent-white"
+                    />
+                    <span className="text-xs text-gray-200">{c.name}</span>
+                    <span className="text-xs text-gray-500 ml-auto">{c.code}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
 
             {/* Run button */}
             <div className="flex flex-col justify-end">
               <button
                 onClick={triggerRun}
-                disabled={serverStatus !== 'online' || triggering}
+                disabled={serverStatus !== 'online' || triggering || selCountries.length === 0}
                 className="px-6 py-2 bg-white text-gray-950 rounded-lg font-semibold text-sm
                            disabled:opacity-30 hover:bg-gray-100 active:scale-95 transition-all"
               >
