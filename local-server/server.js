@@ -134,6 +134,10 @@ function startJob(id, type, countries) {
     if (type === 'mobile-only') {
         cmd  = 'npm'
         args = ['run', 'e2e:mobile-only']
+    } else if (type === 'backend-only') {
+        cmd  = 'node'
+        args = ['workflows/e2e_full_workflow.js', '--no-mobile',
+                ...(countries.length ? [`--countries=${countries.join(',')}`] : [])]
     } else if (countries.length > 0) {
         cmd  = 'node'
         args = ['workflows/e2e_full_workflow.js', `--countries=${countries.join(',')}`]

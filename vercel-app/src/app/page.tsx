@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface Job {
   id: string
-  type: 'full' | 'mobile-only'
+  type: 'full' | 'backend-only' | 'mobile-only'
   countries: string[]
   status: 'queued' | 'running' | 'completed' | 'failed'
   startTime: string
@@ -75,7 +75,7 @@ export default function Dashboard() {
   const [selectedJob,  setSelectedJob]  = useState<string | null>(null)
   const [logs,         setLogs]         = useState<string[]>([])
   const [reports,      setReports]      = useState<string[]>([])
-  const [runType,      setRunType]      = useState<'full' | 'mobile-only'>('full')
+  const [runType,      setRunType]      = useState<'full' | 'backend-only' | 'mobile-only'>('full')
   const [selCountries, setSelCountries] = useState<string[]>([])
   const [triggering,   setTriggering]   = useState(false)
 
@@ -220,7 +220,7 @@ export default function Dashboard() {
             <div>
               <p className="text-xs text-gray-500 mb-2">Run type</p>
               <div className="flex gap-2">
-                {(['full', 'mobile-only'] as const).map(t => (
+                {(['full', 'backend-only', 'mobile-only'] as const).map(t => (
                   <button
                     key={t}
                     onClick={() => setRunType(t)}
@@ -230,7 +230,7 @@ export default function Dashboard() {
                         : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
                     }`}
                   >
-                    {t === 'full' ? 'Full E2E' : 'Mobile Only'}
+                    {t === 'full' ? 'Full E2E' : t === 'backend-only' ? 'Backend Only' : 'Mobile Only'}
                   </button>
                 ))}
               </div>
@@ -314,7 +314,7 @@ export default function Dashboard() {
                           {job.status}
                         </span>
                         <span className="text-sm text-gray-200">
-                          {job.type === 'full' ? 'Full E2E' : 'Mobile Only'}
+                          {job.type === 'full' ? 'Full E2E' : job.type === 'backend-only' ? 'Backend Only' : 'Mobile Only'}
                         </span>
                       </div>
                       <span className="text-xs text-gray-500">
