@@ -18,22 +18,47 @@ interface Job {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const COUNTRIES = [
-  { code: 'USA', name: 'United States' },
-  { code: 'GBR', name: 'United Kingdom' },
-  { code: 'BRA', name: 'Brazil' },
-  { code: 'MEX', name: 'Mexico' },
-  { code: 'ESP', name: 'Spain' },
-  { code: 'DEU', name: 'Germany' },
-  { code: 'FRA', name: 'France' },
-  { code: 'ITA', name: 'Italy' },
-  { code: 'NLD', name: 'Netherlands' },
-  { code: 'BEL', name: 'Belgium' },
+  { code: 'AND', name: 'Andorra' },
   { code: 'AUT', name: 'Austria' },
-  { code: 'PRT', name: 'Portugal' },
-  { code: 'POL', name: 'Poland' },
-  { code: 'SWE', name: 'Sweden' },
+  { code: 'BEL', name: 'Belgium' },
+  { code: 'BGR', name: 'Bulgaria' },
+  { code: 'BRA', name: 'Brazil' },
+  { code: 'CHE', name: 'Switzerland' },
+  { code: 'CYP', name: 'Cyprus' },
+  { code: 'CZE', name: 'Czech Republic' },
+  { code: 'DEU', name: 'Germany' },
   { code: 'DNK', name: 'Denmark' },
+  { code: 'ESP', name: 'Spain' },
+  { code: 'EST', name: 'Estonia' },
+  { code: 'FIN', name: 'Finland' },
+  { code: 'FRA', name: 'France' },
+  { code: 'GBR', name: 'United Kingdom' },
+  { code: 'GRC', name: 'Greece' },
+  { code: 'HRV', name: 'Croatia' },
+  { code: 'HUN', name: 'Hungary' },
+  { code: 'IND', name: 'India' },
   { code: 'IRL', name: 'Ireland' },
+  { code: 'ISL', name: 'Iceland' },
+  { code: 'ITA', name: 'Italy' },
+  { code: 'LIE', name: 'Liechtenstein' },
+  { code: 'LTU', name: 'Lithuania' },
+  { code: 'LUX', name: 'Luxembourg' },
+  { code: 'LVA', name: 'Latvia' },
+  { code: 'MDA', name: 'Moldova' },
+  { code: 'MEX', name: 'Mexico' },
+  { code: 'MKD', name: 'North Macedonia' },
+  { code: 'MLT', name: 'Malta' },
+  { code: 'MNE', name: 'Montenegro' },
+  { code: 'NLD', name: 'Netherlands' },
+  { code: 'NOR', name: 'Norway' },
+  { code: 'POL', name: 'Poland' },
+  { code: 'PRT', name: 'Portugal' },
+  { code: 'ROU', name: 'Romania' },
+  { code: 'SRB', name: 'Serbia' },
+  { code: 'SVK', name: 'Slovakia' },
+  { code: 'SVN', name: 'Slovenia' },
+  { code: 'SWE', name: 'Sweden' },
+  { code: 'USA', name: 'United States' },
 ]
 
 const STATUS_BADGE: Record<string, string> = {
@@ -75,9 +100,9 @@ export default function Dashboard() {
   const [selectedJob,  setSelectedJob]  = useState<string | null>(null)
   const [logs,         setLogs]         = useState<string[]>([])
   const [reports,      setReports]      = useState<string[]>([])
-  const [runType,      setRunType]      = useState<'full' | 'backend-only' | 'mobile-only'>('full')
-  const [selCountries, setSelCountries] = useState<string[]>([])
-  const [triggering,   setTriggering]   = useState(false)
+  const [runType,       setRunType]       = useState<'full' | 'backend-only' | 'mobile-only'>('full')
+  const [selCountry,    setSelCountry]    = useState<string>('')
+  const [triggering,    setTriggering]    = useState(false)
 
   const logsContainerRef  = useRef<HTMLDivElement>(null)
   const logPollRef        = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -158,7 +183,7 @@ export default function Dashboard() {
     setTriggering(true)
     try {
       const body: Record<string, unknown> = { type: runType }
-      if (selCountries.length > 0) body.countries = selCountries
+      if (selCountry) body.countries = [selCountry]
       const r = await fetch('/api/proxy/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -176,11 +201,6 @@ export default function Dashboard() {
       setTriggering(false)
     }
   }
-
-  const toggleCountry = (code: string) =>
-    setSelCountries(prev =>
-      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
-    )
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
@@ -240,26 +260,22 @@ export default function Dashboard() {
             </div>
 
             {/* Country selector */}
-            <div className="flex-1 min-w-64">
+            <div>
               <p className="text-xs text-gray-500 mb-2">
-                Countries
-                <span className="ml-1 text-gray-600">(leave empty = all default countries)</span>
+                Country
+                <span className="ml-1 text-gray-600">(default = all countries)</span>
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <select
+                value={selCountry}
+                onChange={e => setSelCountry(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-1.5
+                           focus:outline-none focus:border-gray-500 min-w-52"
+              >
+                <option value="">All default countries</option>
                 {COUNTRIES.map(c => (
-                  <button
-                    key={c.code}
-                    onClick={() => toggleCountry(c.code)}
-                    className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
-                      selCountries.includes(c.code)
-                        ? 'bg-white text-gray-950'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                    }`}
-                  >
-                    {c.name}
-                  </button>
+                  <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
                 ))}
-              </div>
+              </select>
             </div>
 
             {/* Run button */}
