@@ -79,8 +79,9 @@ export default function Dashboard() {
   const [selCountries, setSelCountries] = useState<string[]>([])
   const [triggering,   setTriggering]   = useState(false)
 
-  const logsContainerRef = useRef<HTMLDivElement>(null)
-  const logPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const logsContainerRef  = useRef<HTMLDivElement>(null)
+  const logPollRef        = useRef<ReturnType<typeof setInterval> | null>(null)
+  const userScrolledUpRef = useRef(false)
 
   // ── Fetchers ────────────────────────────────────────────────────────────────
 
@@ -119,7 +120,7 @@ export default function Dashboard() {
     fetchJobs()
     fetchReports()
     const h = setInterval(checkHealth, 30_000)
-    const j = setInterval(fetchJobs,  5_000)
+    const j = setInterval(fetchJobs,   2_000)
     const r = setInterval(fetchReports, 30_000)
     return () => { clearInterval(h); clearInterval(j); clearInterval(r) }
   }, [checkHealth, fetchJobs, fetchReports])
@@ -143,8 +144,9 @@ export default function Dashboard() {
     if (active) setSelectedJob(active.id)
   }, [jobs, selectedJob])
 
-  // Auto-scroll logs within the container (not the page)
+  // Auto-scroll: only when user hasn't manually scrolled up
   useEffect(() => {
+    if (userScrolledUpRef.current) return
     const el = logsContainerRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [logs])
@@ -360,7 +362,7 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-            <div ref={logsContainerRef} className="overflow-y-auto h-[55vh] p-4 font-mono text-xs space-y-px">
+            <div ref={logsContainerRef} onScroll={() => { const el = logsContainerRef.current; if (el) userScrolledUpRef.current = el.scrollHeight - el.scrollTop - el.clientHeight > 60 }} className="overflow-y-auto h-[55vh] p-4 font-mono text-xs space-y-px">
               {!selectedJob ? (
                 <div className="py-12 text-center text-gray-600">Select a run from history</div>
               ) : logs.length === 0 ? (
