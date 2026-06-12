@@ -23,7 +23,8 @@ echo       Done.
 
 :: ── Step 3: Get ngrok URL ────────────────────────────────────
 echo [3/5] Fetching tunnel URL...
-for /f "delims=" %%i in ('powershell -NoProfile -Command "(Invoke-WebRequest -Uri http://127.0.0.1:4040/api/tunnels -UseBasicParsing | ConvertFrom-Json).tunnels[0].public_url"') do set NGROK_URL=%%i
+powershell -NoProfile -Command "(Invoke-WebRequest -Uri http://127.0.0.1:4040/api/tunnels -UseBasicParsing | ConvertFrom-Json).tunnels[0].public_url" > "%TEMP%\ngrok_url.txt" 2>nul
+set /p NGROK_URL=<"%TEMP%\ngrok_url.txt"
 
 if "%NGROK_URL%"=="" (
     echo       ERROR: Could not get ngrok URL. Check ngrok is running.
