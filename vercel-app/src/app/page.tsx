@@ -290,10 +290,20 @@ export default function Dashboard() {
 
             {/* Country multi-select */}
             <div>
-              <p className="text-xs text-gray-500 mb-2">
-                Countries
-                <span className="ml-1 text-gray-600">({selCountries.length} selected)</span>
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-500">
+                  Countries
+                  <span className="ml-1 text-gray-600">({selCountries.length} selected)</span>
+                </p>
+                {selCountries.length > 0 && (
+                  <button
+                    onClick={() => setSelCountries([])}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    Uncheck all
+                  </button>
+                )}
+              </div>
               <div className="h-36 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg p-2 space-y-0.5 min-w-56">
                 {/* EU rotating option at top */}
                 <label className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 cursor-pointer">
