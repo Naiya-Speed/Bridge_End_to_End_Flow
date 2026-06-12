@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 
@@ -79,7 +79,7 @@ export default function Dashboard() {
   const [selCountries, setSelCountries] = useState<string[]>([])
   const [triggering,   setTriggering]   = useState(false)
 
-  const logsEndRef = useRef<HTMLDivElement>(null)
+  const logsContainerRef = useRef<HTMLDivElement>(null)
   const logPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Fetchers ────────────────────────────────────────────────────────────────
@@ -143,9 +143,10 @@ export default function Dashboard() {
     if (active) setSelectedJob(active.id)
   }, [jobs, selectedJob])
 
-  // Auto-scroll logs
+  // Auto-scroll logs within the container (not the page)
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = logsContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [logs])
 
   // ── Actions ─────────────────────────────────────────────────────────────────
@@ -359,7 +360,7 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto h-96 p-4 font-mono text-xs space-y-px">
+            <div ref={logsContainerRef} className="overflow-y-auto h-[55vh] p-4 font-mono text-xs space-y-px">
               {!selectedJob ? (
                 <div className="py-12 text-center text-gray-600">Select a run from history</div>
               ) : logs.length === 0 ? (
@@ -371,7 +372,6 @@ export default function Dashboard() {
                   </div>
                 ))
               )}
-              <div ref={logsEndRef} />
             </div>
           </section>
         </div>
