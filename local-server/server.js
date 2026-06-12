@@ -11,6 +11,25 @@ const APPIUM_TESTS_DIR = process.env.APPIUM_TESTS_DIR || path.join(__dirname, '.
 const API_KEY         = process.env.API_KEY || ''
 const JOBS_FILE       = path.join(__dirname, 'jobs.json')
 const LOGS_DIR        = path.join(__dirname, 'logs')
+const COUNTER_FILE    = path.join(APPIUM_TESTS_DIR, 'config', 'counter.json')
+
+const EU_COUNTRIES = [
+    'AUT','BEL','BGR','HRV','CYP','CZE','DEU','DNK',
+    'EST','FIN','FRA','GRC','HUN','IRL','ITA','LVA',
+    'LTU','LUX','MLT','NLD','POL','PRT','ROU','SVK',
+    'SVN','ESP','SWE',
+]
+
+function readCounter()  { try { return JSON.parse(fs.readFileSync(COUNTER_FILE, 'utf8')) } catch { return { euCountryIndex: 0 } } }
+function peekEuCountry()   { const d = readCounter(); return EU_COUNTRIES[(d.euCountryIndex ?? 0) % EU_COUNTRIES.length] }
+function popEuCountry()    {
+    const d     = readCounter()
+    const idx   = (d.euCountryIndex ?? 0) % EU_COUNTRIES.length
+    const code  = EU_COUNTRIES[idx]
+    d.euCountryIndex = (idx + 1) % EU_COUNTRIES.length
+    fs.writeFileSync(COUNTER_FILE, JSON.stringify(d, null, 2))
+    return code
+}
 
 app.use(cors())
 app.use(express.json())
@@ -65,6 +84,10 @@ function genId() {
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', version: '1.0.0', time: new Date().toISOString() })
+})
+
+app.get('/next-eu-country', requireAuth, (req, res) => {
+    res.json({ country: peekEuCountry() })
 })
 
 app.get('/jobs', requireAuth, (req, res) => {
@@ -130,6 +153,14 @@ app.get('/reports/:filename', requireAuth, (req, res) => {
 // ── Job runner ────────────────────────────────────────────────────────────────
 function startJob(id, type, countries) {
     updateJob(id, { status: 'running' })
+
+    // Resolve EU_ROTATE → actual rotating EU country
+    if (countries.includes('EU_ROTATE')) {
+        const eu = popEuCountry()
+        countries = countries.map(c => c === 'EU_ROTATE' ? eu : c)
+        addLog(id, `[EU] Rotating EU slot → ${eu}`)
+        updateJob(id, { countries })
+    }
 
     let cmd, args
     cmd = 'npm'

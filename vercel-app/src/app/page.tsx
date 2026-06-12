@@ -102,6 +102,7 @@ export default function Dashboard() {
   const [reports,      setReports]      = useState<string[]>([])
   const [runType,       setRunType]       = useState<'full' | 'backend-only' | 'mobile-only'>('full')
   const [selCountry,    setSelCountry]    = useState<string>('')
+  const [nextEuCountry, setNextEuCountry] = useState<string>('')
   const [triggering,    setTriggering]    = useState(false)
 
   const logsContainerRef  = useRef<HTMLDivElement>(null)
@@ -138,17 +139,25 @@ export default function Dashboard() {
     } catch {}
   }, [])
 
+  const fetchNextEuCountry = useCallback(async () => {
+    try {
+      const r = await fetch('/api/proxy/next-eu-country', { cache: 'no-store' })
+      if (r.ok) { const d = await r.json(); setNextEuCountry(d.country ?? '') }
+    } catch {}
+  }, [])
+
   // ── Polling ─────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     checkHealth()
     fetchJobs()
     fetchReports()
+    fetchNextEuCountry()
     const h = setInterval(checkHealth, 30_000)
     const j = setInterval(fetchJobs,   2_000)
     const r = setInterval(fetchReports, 30_000)
     return () => { clearInterval(h); clearInterval(j); clearInterval(r) }
-  }, [checkHealth, fetchJobs, fetchReports])
+  }, [checkHealth, fetchJobs, fetchReports, fetchNextEuCountry])
 
   // Poll logs for the selected job while it's active
   useEffect(() => {
@@ -194,6 +203,7 @@ export default function Dashboard() {
         setSelectedJob(d.job.id)
         setLogs([])
         await fetchJobs()
+        fetchNextEuCountry()
       } else {
         alert(d.error || 'Failed to start run')
       }
@@ -259,11 +269,41 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Country selector */}
+            {/* Quick-select: default 5 */}
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Quick select</p>
+              <div className="flex gap-1.5 flex-wrap">
+                {(['USA','MEX','BRA','GBR'] as const).map(code => (
+                  <button
+                    key={code}
+                    onClick={() => setSelCountry(code)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      selCountry === code
+                        ? 'bg-white text-gray-950'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                    }`}
+                  >
+                    {code}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setSelCountry('EU_ROTATE')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selCountry === 'EU_ROTATE'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-800 text-blue-400 hover:bg-gray-700'
+                  }`}
+                  title={nextEuCountry ? `Next EU: ${nextEuCountry}` : 'EU rotating'}
+                >
+                  EU ↻{nextEuCountry ? ` (${nextEuCountry})` : ''}
+                </button>
+              </div>
+            </div>
+
+            {/* Country dropdown */}
             <div>
               <p className="text-xs text-gray-500 mb-2">
-                Country
-                <span className="ml-1 text-gray-600">(default = all countries)</span>
+                Or pick any country
               </p>
               <select
                 value={selCountry}
@@ -272,6 +312,7 @@ export default function Dashboard() {
                            focus:outline-none focus:border-gray-500 min-w-52"
               >
                 <option value="">All default countries</option>
+                <option value="EU_ROTATE">EU — rotating{nextEuCountry ? ` (next: ${nextEuCountry})` : ''}</option>
                 {COUNTRIES.map(c => (
                   <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
                 ))}
