@@ -115,10 +115,10 @@ app.post('/jobs', requireAuth, (req, res) => {
     const running = loadJobs().some(j => j.status === 'running' || j.status === 'queued')
     if (running) return res.status(409).json({ error: 'A run is already in progress' })
 
-    const { type = 'full', countries = [] } = req.body
+    const { type = 'full', countries = [], email = '' } = req.body
     const id  = genId()
     const job = {
-        id, type, countries,
+        id, type, countries, email,
         status:    'queued',
         startTime: new Date().toISOString(),
         endTime:   null,
@@ -131,7 +131,7 @@ app.post('/jobs', requireAuth, (req, res) => {
     logBuffers[id] = []
 
     res.status(201).json({ job })
-    setImmediate(() => startJob(id, type, countries))
+    setImmediate(() => startJob(id, type, countries, email))
 })
 
 app.get('/reports', requireAuth, (req, res) => {
@@ -151,7 +151,7 @@ app.get('/reports/:filename', requireAuth, (req, res) => {
 })
 
 // ── Job runner ────────────────────────────────────────────────────────────────
-function startJob(id, type, countries) {
+function startJob(id, type, countries, email = '') {
     updateJob(id, { status: 'running' })
 
     // Resolve EU_ROTATE → actual rotating EU country
@@ -164,8 +164,15 @@ function startJob(id, type, countries) {
 
     let cmd, args
     cmd = 'npm'
+    const PARTIAL_TYPES = ['signup-verify', 'basic-kyc', 'full-kyc']
     if (type === 'mobile-only') {
         args = ['run', 'e2e:mobile-only']
+    } else if (PARTIAL_TYPES.includes(type)) {
+        const country = countries[0] || 'USA'
+        args = ['run', 'e2e:partial', '--',
+                `--mode=${type}`,
+                `--country=${country}`,
+                ...(email ? [`--email=${email}`] : [])]
     } else if (type === 'backend-only') {
         args = ['run', 'e2e:backend-only', '--',
                 ...(countries.length ? [`--countries=${countries.join(',')}`] : [])]
