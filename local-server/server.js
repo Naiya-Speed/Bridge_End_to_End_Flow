@@ -176,8 +176,23 @@ function startJob(id, type, countries) {
     })
 }
 
+// ── Startup: recover stuck jobs from previous crash ───────────────────────────
+function recoverStuckJobs() {
+    const jobs = loadJobs()
+    const stuck = jobs.filter(j => j.status === 'running' || j.status === 'queued')
+    if (stuck.length === 0) return
+    stuck.forEach(j => {
+        j.status  = 'failed'
+        j.endTime = new Date().toISOString()
+        j.exitCode = -1
+        console.log(`[Recovery] Marked stuck job ${j.id} as failed`)
+    })
+    saveJobs(jobs)
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
+    recoverStuckJobs()
     console.log(`E2E Local Server on http://localhost:${PORT}`)
     console.log(`APPIUM_TESTS_DIR: ${APPIUM_TESTS_DIR}`)
     if (!API_KEY) console.warn('[WARN] API_KEY not set — server is open to anyone')
