@@ -131,18 +131,15 @@ function startJob(id, type, countries) {
     updateJob(id, { status: 'running' })
 
     let cmd, args
+    cmd = 'npm'
     if (type === 'mobile-only') {
-        cmd  = 'npm'
         args = ['run', 'e2e:mobile-only']
     } else if (type === 'backend-only') {
-        cmd  = 'node'
-        args = ['workflows/e2e_full_workflow.js', '--no-mobile',
+        args = ['run', 'e2e:backend-only', '--',
                 ...(countries.length ? [`--countries=${countries.join(',')}`] : [])]
     } else if (countries.length > 0) {
-        cmd  = 'node'
-        args = ['workflows/e2e_full_workflow.js', `--countries=${countries.join(',')}`]
+        args = ['run', 'e2e', '--', `--countries=${countries.join(',')}`]
     } else {
-        cmd  = 'npm'
         args = ['run', 'e2e']
     }
 
