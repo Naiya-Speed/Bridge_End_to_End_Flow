@@ -366,7 +366,11 @@ export default function Dashboard() {
               {!selectedJob ? (
                 <div className="py-12 text-center text-gray-600">Select a run from history</div>
               ) : logs.length === 0 ? (
-                <div className="py-12 text-center text-gray-600">Waiting for logs…</div>
+                <div className="py-12 text-center text-gray-600">
+                  {activeJobObj?.status === 'running' || activeJobObj?.status === 'queued'
+                    ? 'Waiting for logs…'
+                    : 'No logs available for this run'}
+                </div>
               ) : (
                 logs.map((line, i) => (
                   <div key={i} className={`leading-5 whitespace-pre-wrap break-all ${lineColor(line)}`}>
