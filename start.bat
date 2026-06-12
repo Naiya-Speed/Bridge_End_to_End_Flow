@@ -9,14 +9,15 @@ echo.
 
 :: ── Step 1: Start Local Server ───────────────────────────────
 echo [1/5] Starting local server...
-start /B "" cmd /C "cd /D D:\Speed\Scripts\Speed\Bridge_End_to_End_Flow\local-server && node server.js > server.log 2>&1"
+taskkill /F /IM node.exe >nul 2>&1
+start "" /MIN cmd /C "cd /D D:\Speed\Scripts\Speed\Bridge_End_to_End_Flow\local-server && node server.js > server.log 2>&1"
 timeout /t 3 /nobreak >nul
 echo       Done.
 
 :: ── Step 2: Start ngrok ──────────────────────────────────────
 echo [2/5] Starting ngrok tunnel...
 taskkill /F /IM ngrok.exe >nul 2>&1
-start /B "" ngrok http 3001 --log json --log-format json
+start "" /MIN cmd /C "ngrok http 3001"
 timeout /t 6 /nobreak >nul
 echo       Done.
 
