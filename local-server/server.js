@@ -46,6 +46,7 @@ function requireAuth(req, res, next) {
 function addLog(id, line) {
     if (!logBuffers[id]) logBuffers[id] = []
     logBuffers[id].push(line)
+    fs.appendFileSync(path.join(LOGS_DIR, `${id}.log`), line + '\n', 'utf8')
 }
 
 function parseSummary(logs) {
@@ -170,7 +171,6 @@ function startJob(id, type, countries) {
             summary,
         })
 
-        fs.writeFileSync(path.join(LOGS_DIR, `${id}.log`), buf.join('\n'), 'utf8')
         addLog(id, `[DONE] Exit code: ${code}`)
         console.log(`[Job ${id}] finished — exit ${code}`)
     })
